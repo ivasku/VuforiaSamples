@@ -10,6 +10,9 @@ To get your app key just go to the vuforia page and register for a developer key
 
 If your APP crashes at launch, look at the log, but 99% you are missing a valid licence key.
 
+
+For more details refer to the readme.txt about Vuforia SDK.
+
 Have fun.
 
 
