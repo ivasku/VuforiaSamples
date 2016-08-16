@@ -1,0 +1,149 @@
+import org.apache.tools.ant.taskdefs.condition.Os
+
+apply plugin: 'com.android.model.application'
+
+def signConf
+
+model {
+    android {
+        compileSdkVersion = 21
+        buildToolsVersion = "23.0.2"
+
+        defaultConfig.with {            
+            minSdkVersion.apiLevel = 15
+            targetSdkVersion.apiLevel = 21
+            versionCode = 1
+            versionName = "1.0"
+            multiDexEnabled = true
+        }
+
+        packagingOptions.with {
+            // exclude 'META-INF/DEPENDENCIES.txt'
+            exclude 'META-INF/DEPENDENCIES.txt'
+            exclude 'META-INF/LICENSE.txt'
+            exclude 'META-INF/NOTICE.txt'
+            exclude 'META-INF/NOTICE'
+            exclude 'META-INF/LICENSE'
+            exclude 'META-INF/DEPENDENCIES'
+            exclude 'META-INF/notice.txt'
+            exclude 'META-INF/license.txt'
+            exclude 'META-INF/dependencies.txt'
+            exclude 'META-INF/LGPL2.1'           
+        }
+
+        dexOptions.with {
+            incremental = true
+            javaMaxHeapSize = "4g"
+        }
+
+    }
+
+    //overrides gradle automatic MK files and uses the custom from JNI dir
+    android.sources {
+        main {
+            jni {
+                source {
+                    srcDirs = ['src/main/none']
+                }
+            }
+            jniLibs {
+                source {
+                    srcDirs = ['src/main/libs']
+                }
+            }
+
+
+        }
+
+
+    }
+
+
+    android.buildTypes {
+        debug {
+            debuggable = true
+        }
+        release {
+            minifyEnabled = false
+            proguardFiles.add(file('proguard-rules.txt'))
+        }
+    }
+
+	/*
+     * native build settings
+     */
+    android.ndk {
+        ldLibs.addAll(["dl", "log", "GLESv2", "EGL", "android", "stdc++", "OpenSLES", "z"])        
+    }
+
+    android.buildTypes {
+        debug {
+
+        }
+        release {
+            minifyEnabled = false
+            proguardFiles.add(file('proguard-rules.txt'))
+            signingConfig = signConf
+        }
+    }
+
+    android.productFlavors {
+
+        /* create("x86") {
+            ndk.abiFilters.add("x86")
+        }
+        create("x86-64") {
+            ndk.abiFilters.add("x86_64")
+        }
+        create("mips") {
+            ndk.abiFilters.add("mips")
+        }
+        create("mips-64") {
+            ndk.abiFilters.add("mips64")
+        }*/
+
+        // To include all cpu architectures, leaves abiFilters empty
+        create("all")
+    }
+
+    android.signingConfigs {
+        create("signed") {
+            storeFile = file("../../../../../keytools/keys/key.keystore")
+            storePassword = "storepass"
+            keyAlias = "alias"
+            keyPassword = "password"
+
+            signConf = it
+        }
+    }
+
+    android.lintOptions {
+        checkReleaseBuilds = false
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    testCompile 'junit:junit:4.12'
+
+}
+
+repositories {
+    flatDir {
+        dirs 'libs'
+    }
+}
+
+//overrides gradle automatic MK files and uses the custom from JNI dir, calls ndk build
+task ndkBuild(type: Exec) {
+    if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+        def NDK_PATH = System.getenv("NDK_MODULE_PATH")
+        commandLine '\\'+NDK_PATH+'\\ndk-build.cmd', '-C', file('src/main').absolutePath        
+    }
+}
+
+//overrides gradle automatic MK files and uses the custom from JNI dir, creates task ndk build
+tasks.withType(JavaCompile) {
+    compileTask -> compileTask.dependsOn ndkBuild
+}
+
