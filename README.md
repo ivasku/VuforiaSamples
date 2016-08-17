@@ -10,6 +10,8 @@ To get your app key just go to the vuforia page and register for a developer key
 
 If your APP crashes at launch, look at the log, but 99% you are missing a valid licence key.
 
+Also you need to add a windows system variable called "NDK_MODULE_PATH" that leads to the ndk-build.cmd, where you downloaded your NDK.
+
 
 For more details refer to the readme.txt about Vuforia SDK.
 
